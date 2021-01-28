@@ -52,6 +52,7 @@ export default defineComponent({
         if (this.number.possibleValues.length === 0) this.manyVisible = false
       } else {
         this.number.possibleValues.push(num)
+        if (this.number.possibleValues.length >= 2) this.manyVisible = true
       }
 
       if (this.number.possibleValues.length === 1 && this.number.possibleValues[0] === this.number.value && !this.manyVisible) {
