@@ -54,13 +54,9 @@ export default defineComponent({
         this.number.possibleValues.push(num)
         if (this.number.possibleValues.length >= 2) this.manyVisible = true
       }
-
+      console.log(this.completeCounter, this.elements)
       if (this.number.possibleValues.length === 1 && this.number.possibleValues[0] === this.number.value && !this.manyVisible) {
         this.$emit('addCompleteCounter')
-        if (this.completeCounter + 1 === this.elements) {
-          this.number.possibleValues = []
-          return
-        }
         this.addedCounter = true
       } else if (this.number.possibleValues.length !== 1 && this.addedCounter) {
         this.$emit('decreaseCompleteCounter')
