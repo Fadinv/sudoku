@@ -78,37 +78,39 @@ export const getSquareIndex = (i: number, j: number): number => {
 /* Переписывает строки в столбцы, получаем реверсионный массив с функцией сортировки */
 export const reverseArray = (arr: any[][]): ReverseArrayResponse => {
 
-    const newArray: number[][] = [[], [], [], [], [], [], [], [], []]
+    const responseArr: number[][] = [[], [], [], [], [], [], [], [], []]
 
     for (let i in arr) {
         for (let j in arr) {
-            newArray[j].push(arr[i][j])
+            responseArr[j].push(arr[i][j])
         }
     }
 
     return {
         mixSudokuArray: () => {
-            return mixSudokuArray(newArray)
+            return mixSudokuArray(responseArr)
         },
-        arr: newArray,
+        arr: responseArr,
     }
 }
 
 /* Принимает массив массивов и сортирует его по строкам с сохранением целостности решения */
 const mixSudokuArray = (arr: number[][]): MixSudokuArrayResponse => {
-
+    console.log(arr)
     const mixAllBlocks = mixArray([mixArray(arr.slice(0, 3)), mixArray(arr.slice(3, 6)), mixArray(arr.slice(6, 9))])
+    console.log(mixAllBlocks)
+    const responseArr: number[][] = Array.prototype.concat(mixAllBlocks[0], mixAllBlocks[1], mixAllBlocks[2])
 
-    const newArr: number[][] = Array.prototype.concat(mixAllBlocks[0], mixAllBlocks[1], mixAllBlocks[2])
+    console.log(responseArr)
 
     return {
         makeObjectsFromSudokuArray: () => {
-            return makeObjectsFromSudokuArray(arr)
+            return makeObjectsFromSudokuArray(responseArr)
         },
         reverse: () => {
-            return reverseArray(newArr)
+            return reverseArray(responseArr)
         },
-        arr: newArr,
+        arr: responseArr,
     }
 }
 
@@ -138,14 +140,14 @@ export const getInitialValues = (): GetInitialValuesResponse => {
 /* Из входного массива создаем массив объектов элементов судоку */
 export const makeObjectsFromSudokuArray = (arr: number[][]): makeObjectsFromSudokuArrayResponse => {
 
-    const responseArray = [[], [], [], [], [], [], [], [], []] as SudokuElement[][]
+    const responseArr = [[], [], [], [], [], [], [], [], []] as SudokuElement[][]
 
     for (let i in arr) {
         for (let j in arr) {
 
             const square = getSquareIndex(+i, +j)
 
-            responseArray[i].push({
+            responseArr[i].push({
                 position: {
                     i: +i,
                     j: +j,
@@ -160,9 +162,9 @@ export const makeObjectsFromSudokuArray = (arr: number[][]): makeObjectsFromSudo
 
     return {
         arrangeElements: () => {
-            return arrangeElements(responseArray)
+            return arrangeElements(responseArr)
         },
-        arr: responseArray,
+        arr: responseArr,
     }
 }
 
@@ -192,7 +194,7 @@ export const arrangeElements = (array: SudokuElement[][]): ArrangeElementsRespon
         makePlayground: (difficult) => {
             return makePlayground(responseArray, difficult)
         },
-        arr: responseArray
+        arr: responseArray,
     }
 }
 

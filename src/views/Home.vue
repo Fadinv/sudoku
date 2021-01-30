@@ -89,12 +89,12 @@ export default defineComponent({
   },
   data: () => ({
     progress: false as false | SudokuElement[][],
-    difficult: 35,
-    isGame: false,
+    difficult: 35 as number,
+    isGame: false as boolean,
     completeCounter: 0 as number,
     elements: 0 as number,
     numbers: [1, 2, 3, 4, 5, 6, 7, 8, 9] as number[],
-    activeValue: 0,
+    activeValue: 0 as number,
     circles: [] as SudokuElement[][],
   }),
   mounted() {
