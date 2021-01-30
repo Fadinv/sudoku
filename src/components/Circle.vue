@@ -9,6 +9,7 @@
         :number="number"
         @addCompleteCounter="$emit('addCompleteCounter')"
         @decreaseCompleteCounter="$emit('decreaseCompleteCounter')"
+        @saveProgress="$emit('saveProgress')"
     />
   </div>
 </template>

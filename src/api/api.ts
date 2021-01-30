@@ -6,7 +6,6 @@ export type SudokuElement = {
         square: number
     }
     visible: boolean
-    visibleOnTable: boolean
     possibleValues: number[] | undefined
 }
 
@@ -21,16 +20,26 @@ export type GetInitialValuesResponse = {
 }
 
 export type MixSudokuArrayResponse = {
+    makeObjectsFromSudokuArray: () => makeObjectsFromSudokuArrayResponse
     reverse: () => ReverseArrayResponse
     arr: number[][]
 }
 
-export type ArrangeElementsResponse = {
+export type ArrangedElements = {
     rows: SudokuElement[][]
     columns: SudokuElement[][]
     circles: SudokuElement[][]
 }
 
+export type ArrangeElementsResponse = {
+    makePlayground: (difficult: number) => ArrangedElements
+    arr: ArrangedElements
+}
+
+export type makeObjectsFromSudokuArrayResponse = {
+    arrangeElements: () => ArrangeElementsResponse
+    arr: SudokuElement[][]
+}
 
 /* Рандомное перемешивание массива */
 export const mixArray = (initialArr: any[]): number[][] => {
@@ -93,6 +102,9 @@ const mixSudokuArray = (arr: number[][]): MixSudokuArrayResponse => {
     const newArr: number[][] = Array.prototype.concat(mixAllBlocks[0], mixAllBlocks[1], mixAllBlocks[2])
 
     return {
+        makeObjectsFromSudokuArray: () => {
+            return makeObjectsFromSudokuArray(arr)
+        },
         reverse: () => {
             return reverseArray(newArr)
         },
@@ -123,9 +135,8 @@ export const getInitialValues = (): GetInitialValuesResponse => {
     }
 }
 
-
 /* Из входного массива создаем массив объектов элементов судоку */
-export const makeObjectsFromSudokuArray = (arr: number[][]): SudokuElement[][] => {
+export const makeObjectsFromSudokuArray = (arr: number[][]): makeObjectsFromSudokuArrayResponse => {
 
     const responseArray = [[], [], [], [], [], [], [], [], []] as SudokuElement[][]
 
@@ -142,35 +153,46 @@ export const makeObjectsFromSudokuArray = (arr: number[][]): SudokuElement[][] =
                 },
                 value: arr[i][j],
                 visible: true,
-                visibleOnTable: true,
                 possibleValues: undefined,
             })
         }
     }
 
-    return responseArray
+    return {
+        arrangeElements: () => {
+            return arrangeElements(responseArray)
+        },
+        arr: responseArray,
+    }
 }
 
 /* Из строк составляем столбцы и квадраты */
-export const arrangeElements = (arr: SudokuElement[][]): ArrangeElementsResponse => {
+export const arrangeElements = (array: SudokuElement[][]): ArrangeElementsResponse => {
 
-    const rows = arr
-    const columns = reverseArray(arr).arr
+    const rows = array
+    const columns = reverseArray(array).arr as SudokuElement[][]
     const circles = [[], [], [], [], [], [], [], [], []] as SudokuElement[][]
 
-    for (let i in arr) {
+    for (let i in array) {
 
-        for (let j in arr) {
+        for (let j in array) {
             const square = getSquareIndex(+i, +j)
 
-            circles[square].push(arr[i][j])
+            circles[square].push(array[i][j])
         }
     }
 
+    const responseArray = {
+        rows: Array.prototype.concat(rows),
+        columns: Array.prototype.concat(columns),
+        circles: Array.prototype.concat(circles),
+    }
+
     return {
-        rows,
-        columns,
-        circles,
+        makePlayground: (difficult) => {
+            return makePlayground(responseArray, difficult)
+        },
+        arr: responseArray
     }
 }
 
@@ -293,9 +315,7 @@ export const getRandomIndexFromArray = (rows: SudokuElement[][], usedIndexes: an
 
 /* Рекурсия. Каждый шаг удаляет одну ячейку и проверяет судоку на единственность решения */
 export const recurseAddDifficult = (
-    rows: SudokuElement[][],
-    columns: SudokuElement[][],
-    circles: SudokuElement[][],
+    arr: ArrangedElements,
     difficult: number,
     allElements: number,
     tryCounter: number,
@@ -304,22 +324,20 @@ export const recurseAddDifficult = (
 
     if (difficult === allElements) return
 
-    const random = getRandomIndexFromArray(rows, usedIndexes)
+    const random = getRandomIndexFromArray(arr.rows, usedIndexes)
 
     if (random === undefined) return
 
-    if (!rows[random.i][random.j].visible) {
-        recurseAddDifficult(rows, columns, circles, difficult, allElements, tryCounter, usedIndexes)
+    if (!arr.rows[random.i][random.j].visible) {
+        recurseAddDifficult(arr, difficult, allElements, tryCounter, usedIndexes)
         return
     }
 
-    rows[random.i][random.j].visible = false
-    rows[random.i][random.j].visibleOnTable = false
-    columns[random.j][random.i].visible = false
-    columns[random.j][random.i].visibleOnTable = false
+    arr.rows[random.i][random.j].visible = false
+    arr.columns[random.j][random.i].visible = false
     difficult++
 
-    const onlyOneDecision = isOnlyOneDecision(rows, columns)
+    const onlyOneDecision = isOnlyOneDecision(arr.rows, arr.columns)
 
     if (!onlyOneDecision) {
         tryCounter += 1
@@ -327,36 +345,34 @@ export const recurseAddDifficult = (
     }
 
     if (onlyOneDecision && difficult !== allElements) {
-        recurseAddDifficult(rows, columns, circles, difficult, allElements, tryCounter, usedIndexes)
+        recurseAddDifficult(arr, difficult, allElements, tryCounter, usedIndexes)
     } else if (!onlyOneDecision && difficult !== allElements) {
-        rows[random.i][random.j].visible = true
-        rows[random.i][random.j].visibleOnTable = true
-        columns[random.j][random.i].visible = true
-        columns[random.j][random.i].visibleOnTable = true
+        arr.rows[random.i][random.j].visible = true
+        arr.columns[random.j][random.i].visible = true
 
         usedIndexes[random.i.toString() + random.j.toString()] = true
         difficult--
 
-        recurseAddDifficult(rows, columns, circles, difficult, allElements, tryCounter, usedIndexes)
+        recurseAddDifficult(arr, difficult, allElements, tryCounter, usedIndexes)
     }
 }
 
 /* входная точка для генерации судоку */
-export const makePlayground = (arr: ArrangeElementsResponse, visibleValues: number): ArrangeElementsResponse => {
+export const makePlayground = (arr: ArrangedElements, difficult: number): ArrangedElements => {
+
+    const responseArray = Object.assign(arr, {})
 
     let tryCounter: number = 0
     const usedIndexes: any = {}
 
     /* Удаляем элементы судоку пока это возможно */
     recurseAddDifficult(
-        arr.rows,
-        arr.columns,
-        arr.circles,
-        visibleValues,
-        arr.rows.length * arr.columns.length,
+        responseArray,
+        difficult,
+        responseArray.rows.length * responseArray.columns.length,
         tryCounter,
         usedIndexes,
     )
 
-    return arr
+    return responseArray
 }

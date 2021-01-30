@@ -1,7 +1,7 @@
 <template>
   <div class="number" @click="addValue(activeValue)">
     <span
-        :class="{visible: number.visibleOnTable || completeCounter === elements, active: activeValue === number.value}"
+        :class="{visible: number.visible || completeCounter === elements, active: activeValue === number.value}"
         class="value"
     >{{number.value}}</span>
 
@@ -30,7 +30,7 @@ import ManyNumbersDisplay from '@/components/ManyNumbersDisplay.vue'
 export default defineComponent({
   name: 'Number',
   props: ['number', 'activeValue', 'completeCounter', 'elements'],
-  emits: ['addCompleteCounter', 'decreaseCompleteCounter'],
+  emits: ['addCompleteCounter', 'decreaseCompleteCounter', 'saveProgress'],
   components: {
     ManyNumbersDisplay,
   },
@@ -43,7 +43,7 @@ export default defineComponent({
   }),
   methods: {
     addValue(num: number) {
-      if (this.number.visibleOnTable || this.activeValue === 0) return
+      if (this.number.visible || this.activeValue === 0) return
 
       if (this.number.possibleValues.includes(num) && !this.manyVisible) {
         this.manyVisible = true
@@ -54,7 +54,7 @@ export default defineComponent({
         this.number.possibleValues.push(num)
         if (this.number.possibleValues.length >= 2) this.manyVisible = true
       }
-      console.log(this.completeCounter, this.elements)
+
       if (this.number.possibleValues.length === 1 && this.number.possibleValues[0] === this.number.value && !this.manyVisible) {
         this.$emit('addCompleteCounter')
         this.addedCounter = true
@@ -62,6 +62,10 @@ export default defineComponent({
         this.$emit('decreaseCompleteCounter')
         this.addedCounter = false
       }
+
+      setTimeout(() => {
+        this.$emit('saveProgress')
+      },0)
     },
   },
 })

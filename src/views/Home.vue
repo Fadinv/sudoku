@@ -26,10 +26,15 @@
       </div>
     </div>
 
-    <div v-if="!isGame">
+    <div v-if="!isGame" class="stuck-start-buttons">
       <button
           class="start"
           @click="startGame">Начать игру!
+      </button>
+      <button
+          v-if="progress"
+          class="start"
+          @click="continueGame">Продолжить прошлую!
       </button>
     </div>
 
@@ -47,6 +52,7 @@
           class="circle"
           @addCompleteCounter="addCompleteCounter"
           @decreaseCompleteCounter="decreaseCompleteCounter"
+          @saveProgress="saveProgress"
       />
 
       <div class="number-panel">
@@ -73,7 +79,7 @@
 import {defineComponent} from 'vue'
 import Circle from '@/components/Circle.vue'
 import NumberPanelItem from '@/components/NumberPanelItem.vue'
-import {arrangeElements, getInitialValues, makeObjectsFromSudokuArray, makePlayground, SudokuElement} from '@/api/api'
+import {getInitialValues, SudokuElement} from '@/api/api'
 
 export default defineComponent({
   name: 'Home',
@@ -82,6 +88,7 @@ export default defineComponent({
     NumberPanelItem,
   },
   data: () => ({
+    progress: false as false | SudokuElement[][],
     difficult: 35,
     isGame: false,
     completeCounter: 0 as number,
@@ -90,6 +97,10 @@ export default defineComponent({
     activeValue: 0,
     circles: [] as SudokuElement[][],
   }),
+  mounted() {
+    const progress = localStorage.getItem('progress')
+    if (!!progress) this.progress = JSON.parse(progress)
+  },
   methods: {
     addActiveValue(num: number) {
       if (this.activeValue === num) this.activeValue = 0
@@ -106,16 +117,21 @@ export default defineComponent({
       this.isGame = true
       this.newGame()
     },
+    saveProgress() {
+      localStorage.setItem('progress', JSON.stringify(this.circles))
+    },
     newGame() {
       this.completeCounter = 0
       this.elements = 0
       this.$emit('game')
 
-      const initialSudokuArray = getInitialValues().mixSudokuArray().reverse().mixSudokuArray()
-      const objectsSudokuArray = makeObjectsFromSudokuArray(initialSudokuArray.arr)
-      const sudoku = arrangeElements(objectsSudokuArray)
-
-      makePlayground(sudoku, this.difficult)
+      const sudoku = getInitialValues()
+          .mixSudokuArray()
+          .reverse()
+          .mixSudokuArray()
+          .makeObjectsFromSudokuArray()
+          .arrangeElements()
+          .makePlayground(this.difficult)
 
       this.circles = sudoku.circles
 
@@ -124,6 +140,21 @@ export default defineComponent({
           if (this.circles[i][j].visible) this.completeCounter++
           this.elements++
           this.circles[i][j].possibleValues = []
+        }
+      }
+
+      localStorage.setItem('progress', JSON.stringify(this.circles))
+    },
+    continueGame() {
+      if (!!this.progress) this.circles = this.progress
+      this.isGame = true
+      this.completeCounter = 0
+      this.elements = 0
+      for (let i in this.circles) {
+        for (let j in this.circles) {
+          if (this.circles[i][j].visible) this.completeCounter++
+          if (this.circles[i][j].possibleValues?.length === 1 && this.circles[i][j].possibleValues?.[0] === this.circles[i][j].value) this.completeCounter++
+          this.elements++
         }
       }
     },
@@ -207,6 +238,9 @@ export default defineComponent({
 
 .complete
   background-color: green
+
+.stuck-start-buttons > * + *
+  margin-top: 1vh
 
 .start
   background-color: green
